@@ -1,0 +1,14 @@
+variable "project_name"       { type = string }
+variable "environment"        { type = string }
+variable "tier"               { type = string }
+variable "ami_id"             { type = string }
+variable "instance_type"      { type = string }
+variable "subnet_ids"         { type = list(string) }
+variable "security_group_ids" { type = list(string) }
+variable "target_group_arn"   { type = string }
+variable "min_size"           { type = number }
+variable "max_size"           { type = number }
+variable "desired_capacity"   { type = number }
+variable "app_port"           { type = number }
+variable "user_data"          { type = string }
+variable "key_name"           { type = string }

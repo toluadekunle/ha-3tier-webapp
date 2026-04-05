@@ -1,0 +1,24 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+terraform.tfvars
+*.tfplan
+tfplan
+crash.log
+override.tf
+override.tf.json
+
+# Keys & secrets
+*.pem
+*.key
+.env
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# OS
+.DS_Store

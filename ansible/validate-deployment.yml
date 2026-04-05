@@ -1,0 +1,78 @@
+---
+# ============================================================
+#  validate-deployment.yml — Post-deploy smoke tests via Ansible
+#  Run: ansible-playbook -i localhost, validate-deployment.yml \
+#         -e "alb_dns=<your-alb-dns>"
+# ============================================================
+
+- name: Validate HA 3-Tier Web App Deployment
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    alb_url: "http://{{ alb_dns }}"
+    expected_status: 200
+    retry_count: 5
+    retry_delay: 10
+
+  tasks:
+
+    - name: "Check [1/4] — ALB root endpoint returns 200"
+      uri:
+        url: "{{ alb_url }}/"
+        method: GET
+        status_code: 200
+        timeout: 30
+      register: root_check
+      retries: "{{ retry_count }}"
+      delay: "{{ retry_delay }}"
+      until: root_check.status == 200
+
+    - name: "Check [2/4] — /health returns healthy JSON"
+      uri:
+        url: "{{ alb_url }}/health"
+        method: GET
+        status_code: 200
+        return_content: yes
+        timeout: 10
+      register: health_check
+      retries: "{{ retry_count }}"
+      delay: "{{ retry_delay }}"
+      until: health_check.status == 200
+
+    - name: "Check [3/4] — /api/health shows DB connected"
+      uri:
+        url: "{{ alb_url }}/api/health"
+        method: GET
+        status_code: 200
+        return_content: yes
+        timeout: 10
+      register: api_health
+      retries: "{{ retry_count }}"
+      delay: "{{ retry_delay }}"
+      until: api_health.status == 200
+
+    - name: "Check [4/4] — POST /api/items creates a record"
+      uri:
+        url: "{{ alb_url }}/api/items"
+        method: POST
+        body_format: json
+        body:
+          name: "ansible-smoke-test-{{ ansible_date_time.epoch }}"
+          description: "Created by Ansible validation playbook"
+        status_code: 201
+        timeout: 15
+      register: post_check
+
+    - name: Print validation summary
+      debug:
+        msg:
+          - "========================================"
+          - "  ✅ ALL SMOKE TESTS PASSED"
+          - "  ALB URL   : {{ alb_url }}"
+          - "  Root      : HTTP {{ root_check.status }}"
+          - "  Health    : HTTP {{ health_check.status }}"
+          - "  API Health: HTTP {{ api_health.status }}"
+          - "  POST Item : HTTP {{ post_check.status }}"
+          - "========================================"
