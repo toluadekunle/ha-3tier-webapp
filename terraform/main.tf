@@ -57,13 +57,13 @@ data "aws_ami" "amazon_linux_2023" {
 module "vpc" {
   source = "./modules/vpc"
 
-  project_name       = var.project_name
-  environment        = var.environment
-  vpc_cidr           = var.vpc_cidr
-  availability_zones = data.aws_availability_zones.available.names
-  public_subnets     = var.public_subnet_cidrs
+  project_name        = var.project_name
+  environment         = var.environment
+  vpc_cidr            = var.vpc_cidr
+  availability_zones  = data.aws_availability_zones.available.names
+  public_subnets      = var.public_subnet_cidrs
   private_app_subnets = var.private_app_subnet_cidrs
-  private_db_subnets = var.private_db_subnet_cidrs
+  private_db_subnets  = var.private_db_subnet_cidrs
 }
 
 # ── Module: Security Groups ───────────────────────────────
@@ -104,11 +104,13 @@ module "web_tier" {
   max_size           = var.web_max_size
   desired_capacity   = var.web_desired_capacity
   app_port           = 80
-  user_data          = base64encode(templatefile("${path.module}/scripts/web_userdata.sh", {
+  user_data = base64encode(templatefile("${path.module}/scripts/web_userdata.sh", {
     app_tier_endpoint = module.alb.internal_alb_dns
+    APP_TIER_ENDPOINT = module.alb.internal_alb_dns
     environment       = var.environment
+    ENVIRONMENT       = var.environment
   }))
-  key_name           = var.key_name
+  key_name = var.key_name
 }
 
 # ── Module: App Tier ASG ──────────────────────────────────
@@ -127,31 +129,33 @@ module "app_tier" {
   max_size           = var.app_max_size
   desired_capacity   = var.app_desired_capacity
   app_port           = 5000
-  user_data          = base64encode(templatefile("${path.module}/scripts/app_userdata.sh", {
+  user_data = base64encode(templatefile("${path.module}/scripts/app_userdata.sh", {
     db_endpoint  = module.rds.db_endpoint
     db_name      = var.db_name
     db_user      = var.db_username
     db_secret_id = aws_secretsmanager_secret.db_password.id
+    DB_SECRET_ID = aws_secretsmanager_secret.db_password.id
     environment  = var.environment
     aws_region   = var.aws_region
+    AWS_REGION   = var.aws_region
   }))
-  key_name           = var.key_name
+  key_name = var.key_name
 }
 
 # ── Module: RDS (Database Tier) ───────────────────────────
 module "rds" {
   source = "./modules/rds"
 
-  project_name    = var.project_name
-  environment     = var.environment
-  subnet_ids      = module.vpc.private_db_subnet_ids
+  project_name       = var.project_name
+  environment        = var.environment
+  subnet_ids         = module.vpc.private_db_subnet_ids
   security_group_ids = [module.security.rds_sg_id]
-  db_name         = var.db_name
-  db_username     = var.db_username
-  db_password     = random_password.db_password.result
-  instance_class  = var.db_instance_class
-  engine_version  = var.db_engine_version
-  multi_az        = var.db_multi_az
+  db_name            = var.db_name
+  db_username        = var.db_username
+  db_password        = random_password.db_password.result
+  instance_class     = var.db_instance_class
+  engine_version     = var.db_engine_version
+  multi_az           = var.db_multi_az
 }
 
 # ── Secrets Manager (DB password) ────────────────────────
@@ -164,7 +168,7 @@ resource "random_password" "db_password" {
 resource "aws_secretsmanager_secret" "db_password" {
   name                    = "${var.project_name}-${var.environment}-db-password"
   description             = "RDS MySQL password for ${var.project_name}"
-  recovery_window_in_days = 7
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "db_password" {
@@ -172,7 +176,7 @@ resource "aws_secretsmanager_secret_version" "db_password" {
   secret_string = jsonencode({
     username = var.db_username
     password = random_password.db_password.result
-    host     = module.rds.db_endpoint
+    host     = split(":", module.rds.db_endpoint)[0]
     dbname   = var.db_name
     port     = 3306
   })

@@ -73,11 +73,11 @@ resource "aws_security_group" "app" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "App traffic from Web tier"
+    description     = "App traffic from ALB and Web tier"
     from_port       = 5000
     to_port         = 5000
     protocol        = "tcp"
-    security_groups = [aws_security_group.web.id]
+    security_groups = [aws_security_group.alb.id, aws_security_group.web.id]
   }
 
   ingress {

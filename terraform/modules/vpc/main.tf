@@ -6,7 +6,7 @@ resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
-  tags = { Name = "${var.project_name}-${var.environment}-vpc" }
+  tags                 = { Name = "${var.project_name}-${var.environment}-vpc" }
 }
 
 # ── Internet Gateway ──────────────────────────────────────
@@ -22,7 +22,7 @@ resource "aws_subnet" "public" {
   cidr_block              = var.public_subnets[count.index]
   availability_zone       = var.availability_zones[count.index]
   map_public_ip_on_launch = true
-  tags = { Name = "${var.project_name}-${var.environment}-public-${count.index + 1}", Tier = "Public" }
+  tags                    = { Name = "${var.project_name}-${var.environment}-public-${count.index + 1}", Tier = "Public" }
 }
 
 # ── Private App Subnets (Web + App EC2) ───────────────────
@@ -31,7 +31,7 @@ resource "aws_subnet" "private_app" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.private_app_subnets[count.index]
   availability_zone = var.availability_zones[count.index]
-  tags = { Name = "${var.project_name}-${var.environment}-app-${count.index + 1}", Tier = "App" }
+  tags              = { Name = "${var.project_name}-${var.environment}-app-${count.index + 1}", Tier = "App" }
 }
 
 # ── Private DB Subnets (RDS) ──────────────────────────────
@@ -40,14 +40,14 @@ resource "aws_subnet" "private_db" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.private_db_subnets[count.index]
   availability_zone = var.availability_zones[count.index]
-  tags = { Name = "${var.project_name}-${var.environment}-db-${count.index + 1}", Tier = "DB" }
+  tags              = { Name = "${var.project_name}-${var.environment}-db-${count.index + 1}", Tier = "DB" }
 }
 
 # ── Elastic IPs for NAT Gateways ──────────────────────────
 resource "aws_eip" "nat" {
-  count  = length(var.public_subnets)
-  domain = "vpc"
-  tags   = { Name = "${var.project_name}-${var.environment}-eip-${count.index + 1}" }
+  count      = length(var.public_subnets)
+  domain     = "vpc"
+  tags       = { Name = "${var.project_name}-${var.environment}-eip-${count.index + 1}" }
   depends_on = [aws_internet_gateway.main]
 }
 
@@ -56,8 +56,8 @@ resource "aws_nat_gateway" "main" {
   count         = length(var.public_subnets)
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
-  tags = { Name = "${var.project_name}-${var.environment}-nat-${count.index + 1}" }
-  depends_on = [aws_internet_gateway.main]
+  tags          = { Name = "${var.project_name}-${var.environment}-nat-${count.index + 1}" }
+  depends_on    = [aws_internet_gateway.main]
 }
 
 # ── Route Table: Public ───────────────────────────────────
@@ -131,8 +131,8 @@ resource "aws_iam_role_policy" "vpc_flow_logs" {
     Statement = [{
       Effect = "Allow"
       Action = ["logs:CreateLogGroup", "logs:CreateLogStream",
-                "logs:PutLogEvents", "logs:DescribeLogGroups",
-                "logs:DescribeLogStreams"]
+        "logs:PutLogEvents", "logs:DescribeLogGroups",
+      "logs:DescribeLogStreams"]
       Resource = "*"
     }]
   })

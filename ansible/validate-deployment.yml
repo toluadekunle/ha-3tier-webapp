@@ -18,9 +18,9 @@
 
   tasks:
 
-    - name: "Check [1/4] — ALB root endpoint returns 200"
+    - name: "Check [1/4] — ALB /api/info endpoint returns 200"
       uri:
-        url: "{{ alb_url }}/"
+        url: "{{ alb_url }}/api/info"
         method: GET
         status_code: 200
         timeout: 30
@@ -59,7 +59,7 @@
         method: POST
         body_format: json
         body:
-          name: "ansible-smoke-test-{{ ansible_date_time.epoch }}"
+          name: "ansible-smoke-test-{{ lookup('pipe', 'date +%s') }}"
           description: "Created by Ansible validation playbook"
         status_code: 201
         timeout: 15

@@ -77,7 +77,7 @@ resource "aws_launch_template" "main" {
 
   metadata_options {
     http_endpoint               = "enabled"
-    http_tokens                 = "required"   # enforce IMDSv2
+    http_tokens                 = "required" # enforce IMDSv2
     http_put_response_hop_limit = 1
   }
 
@@ -157,7 +157,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   threshold           = 70
   alarm_description   = "Scale up when CPU > 70%"
   alarm_actions       = [aws_autoscaling_policy.scale_up.arn]
-  dimensions = { AutoScalingGroupName = aws_autoscaling_group.main.name }
+  dimensions          = { AutoScalingGroupName = aws_autoscaling_group.main.name }
 }
 
 resource "aws_cloudwatch_metric_alarm" "cpu_low" {
@@ -171,5 +171,5 @@ resource "aws_cloudwatch_metric_alarm" "cpu_low" {
   threshold           = 20
   alarm_description   = "Scale down when CPU < 20%"
   alarm_actions       = [aws_autoscaling_policy.scale_down.arn]
-  dimensions = { AutoScalingGroupName = aws_autoscaling_group.main.name }
+  dimensions          = { AutoScalingGroupName = aws_autoscaling_group.main.name }
 }

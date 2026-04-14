@@ -10,7 +10,7 @@ resource "aws_lb" "external" {
   security_groups    = [var.alb_sg_id]
   subnets            = var.public_subnet_ids
 
-  enable_deletion_protection       = false  # set true in production
+  enable_deletion_protection       = false # set true in production
   enable_cross_zone_load_balancing = true
   idle_timeout                     = 60
 
