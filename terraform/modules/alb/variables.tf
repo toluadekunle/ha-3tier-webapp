@@ -27,3 +27,8 @@ variable "private_subnet_ids" {
   description = "Private subnet IDs for internal ALB"
   type        = list(string)
 }
+
+variable "int_alb_sg_id" {
+  description = "Security group ID for internal ALB"
+  type        = string
+}

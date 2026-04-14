@@ -34,6 +34,30 @@ resource "aws_security_group" "alb" {
   tags = { Name = "${var.project_name}-${var.environment}-alb-sg" }
 }
 
+# ── Internal ALB Security Group ──────────────────────────
+resource "aws_security_group" "int_alb" {
+  name        = "${var.project_name}-${var.environment}-int-alb-sg"
+  description = "Internal ALB: allow HTTP from Web tier only"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description     = "HTTP from Web tier"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.web.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = { Name = "${var.project_name}-${var.environment}-int-alb-sg" }
+}
+
 # ── Web Tier Security Group ───────────────────────────────
 resource "aws_security_group" "web" {
   name        = "${var.project_name}-${var.environment}-web-sg"
@@ -69,7 +93,7 @@ resource "aws_security_group" "app" {
     from_port       = 5000
     to_port         = 5000
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id, aws_security_group.web.id]
+    security_groups = [aws_security_group.int_alb.id, aws_security_group.web.id]
   }
 
 

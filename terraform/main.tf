@@ -86,6 +86,7 @@ module "alb" {
   public_subnet_ids = module.vpc.public_subnet_ids
   private_subnet_ids = module.vpc.private_app_subnet_ids
   alb_sg_id         = module.security.alb_sg_id
+  int_alb_sg_id     = module.security.int_alb_sg_id
   certificate_arn   = var.certificate_arn
 }
 
