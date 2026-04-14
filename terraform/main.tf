@@ -101,6 +101,7 @@ module "web_tier" {
   subnet_ids         = module.vpc.private_app_subnet_ids
   security_group_ids = [module.security.web_sg_id]
   target_group_arn   = module.alb.web_target_group_arn
+  secret_arn         = aws_secretsmanager_secret.db_password.arn
   min_size           = var.web_min_size
   max_size           = var.web_max_size
   desired_capacity   = var.web_desired_capacity
@@ -127,6 +128,7 @@ module "app_tier" {
   security_group_ids = [module.security.app_sg_id]
   target_group_arn   = module.alb.app_target_group_arn
   min_size           = var.app_min_size
+  secret_arn         = aws_secretsmanager_secret.db_password.arn
   max_size           = var.app_max_size
   desired_capacity   = var.app_desired_capacity
   app_port           = 5000

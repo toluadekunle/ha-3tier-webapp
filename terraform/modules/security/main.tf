@@ -48,14 +48,6 @@ resource "aws_security_group" "web" {
     security_groups = [aws_security_group.alb.id]
   }
 
-  ingress {
-    description = "SSH from VPC (bastion/jumphost)"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
@@ -80,13 +72,6 @@ resource "aws_security_group" "app" {
     security_groups = [aws_security_group.alb.id, aws_security_group.web.id]
   }
 
-  ingress {
-    description = "SSH from VPC"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
-  }
 
   egress {
     from_port   = 0

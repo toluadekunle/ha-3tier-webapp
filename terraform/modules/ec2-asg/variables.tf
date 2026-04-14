@@ -12,3 +12,9 @@ variable "desired_capacity" { type = number }
 variable "app_port" { type = number }
 variable "user_data" { type = string }
 variable "key_name" { type = string }
+
+variable "secret_arn" {
+  description = "ARN of the Secrets Manager secret for IAM policy scoping"
+  type        = string
+  default     = "*"
+}
