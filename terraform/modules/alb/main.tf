@@ -126,7 +126,7 @@ resource "aws_lb" "internal" {
   internal           = true
   load_balancer_type = "application"
   security_groups    = [var.alb_sg_id]
-  subnets            = var.public_subnet_ids
+  subnets            = var.private_subnet_ids
   tags               = { Name = "${var.project_name}-${var.environment}-int-alb", Type = "internal" }
 }
 

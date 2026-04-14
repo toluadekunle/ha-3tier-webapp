@@ -22,3 +22,8 @@ variable "certificate_arn" {
   type    = string
   default = ""
 }
+
+variable "private_subnet_ids" {
+  description = "Private subnet IDs for internal ALB"
+  type        = list(string)
+}
