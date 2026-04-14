@@ -106,8 +106,12 @@ resource "aws_route_table_association" "private_db" {
 }
 
 # ── VPC Flow Logs ─────────────────────────────────────────
+resource "random_id" "log_suffix" {
+  byte_length = 4
+}
+
 resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
-  name              = "/aws/vpc/${var.project_name}-${var.environment}"
+  name              = "/aws/vpc/${var.project_name}-${var.environment}-${random_id.log_suffix.hex}"
   retention_in_days = 7
 }
 
