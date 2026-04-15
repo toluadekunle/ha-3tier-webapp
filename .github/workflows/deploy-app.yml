@@ -6,7 +6,7 @@ on:
     paths:
       - 'terraform/scripts/app.py'
 permissions:
-  contents: read
+  contents: write
 jobs:
   build-and-deploy:
     name: Packer Build → Terraform Deploy
@@ -31,12 +31,20 @@ jobs:
       - name: Build AMI
         run: cd packer && packer build app-ami.pkr.hcl
 
-      - name: Extract AMI ID
-        id: ami
+      - name: Extract AMI ID and update tfvars
         run: |
           NEW_AMI=$(jq -r '.builds[-1].artifact_id' packer/manifest.json | cut -d ":" -f2)
           echo "New AMI: $NEW_AMI"
-          echo "ami_id=$NEW_AMI" >> $GITHUB_OUTPUT
+          sed -i "s/app_ami_id = \".*\"/app_ami_id = \"$NEW_AMI\"/" terraform/terraform.tfvars
+          grep app_ami_id terraform/terraform.tfvars
+
+      - name: Commit updated AMI ID to repo
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add terraform/terraform.tfvars
+          git commit -m "chore: update app_ami_id to $(grep app_ami_id terraform/terraform.tfvars | cut -d'"' -f2) [skip ci]"
+          git push
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -48,5 +56,3 @@ jobs:
 
       - name: Terraform Apply
         run: cd terraform && terraform apply -auto-approve
-        env:
-          TF_VAR_app_ami_id: ${{ steps.ami.outputs.ami_id }}
