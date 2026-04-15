@@ -22,7 +22,7 @@ def get_instance_meta():
         return "unknown", "unknown"
 
 app = Flask(__name__)
-APP_VERSION = "2.2.0"
+APP_VERSION = "2.2.1"
 DEPLOY_DATE = "15 Apr 2026 22:00"
 logging.basicConfig(
     level=logging.INFO,
