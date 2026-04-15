@@ -76,7 +76,7 @@ build {
   }
 
   post-processor "manifest" {
-    output     = "packer/manifest.json"
+    output     = "manifest.json"
     strip_path = true
   }
 }
