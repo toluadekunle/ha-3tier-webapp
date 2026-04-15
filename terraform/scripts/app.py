@@ -149,6 +149,22 @@ def info():
         "timestamp":   datetime.utcnow().isoformat()
     })
 
+
+@app.route("/api/stats")
+def stats():
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) as total FROM items")
+            total = cur.fetchone()["total"]
+            cur.execute("SELECT DATE(created_at) as date, COUNT(*) as count FROM items GROUP BY DATE(created_at) ORDER BY date DESC LIMIT 7")
+            daily = cur.fetchall()
+        conn.close()
+        return jsonify({"total_items": total, "daily_breakdown": daily, "tier": "app"})
+    except Exception as e:
+        logger.error("GET /api/stats failed: %s", e)
+        return jsonify({"error": "Database error", "detail": str(e)}), 500
+
 @app.route("/api/items", methods=["GET"])
 def get_items():
     try:
