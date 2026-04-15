@@ -40,16 +40,38 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-data "aws_ami" "amazon_linux_2023" {
+# ── AMI Lookups (Packer-built golden images) ──────────────
+data "aws_ami" "web" {
   most_recent = true
-  owners      = ["amazon"]
+  owners      = ["self"]
   filter {
-    name   = "name"
-    values = ["al2023-ami-*-x86_64"]
+    name   = "tag:Tier"
+    values = ["web"]
   }
   filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
+    name   = "tag:ManagedBy"
+    values = ["Packer"]
+  }
+  filter {
+    name   = "state"
+    values = ["available"]
+  }
+}
+
+data "aws_ami" "app" {
+  most_recent = true
+  owners      = ["self"]
+  filter {
+    name   = "tag:Tier"
+    values = ["app"]
+  }
+  filter {
+    name   = "tag:ManagedBy"
+    values = ["Packer"]
+  }
+  filter {
+    name   = "state"
+    values = ["available"]
   }
 }
 
@@ -97,7 +119,7 @@ module "web_tier" {
   project_name       = var.project_name
   environment        = var.environment
   tier               = "web"
-  ami_id             = data.aws_ami.amazon_linux_2023.id
+  ami_id             = data.aws_ami.web.id
   instance_type      = var.web_instance_type
   subnet_ids         = module.vpc.private_app_subnet_ids
   security_group_ids = [module.security.web_sg_id]
@@ -124,7 +146,7 @@ module "app_tier" {
   project_name       = var.project_name
   environment        = var.environment
   tier               = "app"
-  ami_id             = data.aws_ami.amazon_linux_2023.id
+  ami_id             = data.aws_ami.app.id
   instance_type      = var.app_instance_type
   subnet_ids         = module.vpc.private_app_subnet_ids
   security_group_ids = [module.security.app_sg_id]

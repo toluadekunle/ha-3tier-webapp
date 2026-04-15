@@ -17,10 +17,8 @@ echo "  Environment : $ENVIRONMENT"
 echo "  App Endpoint: $APP_TIER_ENDPOINT"
 echo "======================================================"
 
-# ── 1. System update ─────────────────────────────────────
-echo "[1/5] Updating system packages..."
-dnf update -y
-dnf install -y nginx jq amazon-cloudwatch-agent
+# ── 1. Packages pre-installed via Packer AMI ─────────────
+echo "[1/5] Packages already baked into AMI, skipping install..."
 
 # ── 2. Configure Nginx ────────────────────────────────────
 echo "[2/5] Configuring Nginx..."

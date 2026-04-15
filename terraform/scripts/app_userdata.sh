@@ -21,22 +21,14 @@ echo "  Environment : $ENVIRONMENT"
 echo "  DB Endpoint : $DB_ENDPOINT"
 echo "======================================================"
 
-# ── 1. System update & packages ──────────────────────────
-echo "[1/6] Installing system packages..."
-dnf update -y
-dnf install -y python3 python3-pip python3-devel mariadb105 gcc jq amazon-cloudwatch-agent
+# ── 1. Packages pre-installed via Packer AMI ──────────────
+echo "[1/6] Packages already baked into AMI, skipping install..."
 
-# ── 2. Create app user & directory ───────────────────────
-echo "[2/6] Setting up app directory..."
-useradd -r -s /bin/false appuser 2>/dev/null || true
-mkdir -p "$APP_DIR"
-chown appuser:appuser "$APP_DIR"
-mkdir -p /var/log/app
-chown appuser:appuser /var/log/app
+# ── 2. App user and directories pre-created via Packer AMI
+echo "[2/6] App user and directories already exist, skipping..."
 
-# ── 3. Install Python dependencies ───────────────────────
-echo "[3/6] Installing Python packages..."
-pip3 install flask gunicorn pymysql boto3 cryptography --quiet
+# ── 3. Python packages pre-installed via Packer AMI ──────
+echo "[3/6] Python packages already baked into AMI, skipping..."
 
 # ── 4. Write the Flask application ───────────────────────
 echo "[4/6] Writing Flask application..."
