@@ -154,3 +154,13 @@ variable "route53_zone_id" {
   type        = string
   default     = ""
 }
+
+variable "web_ami_id" {
+  description = "Packer-built web tier AMI ID"
+  type        = string
+}
+
+variable "app_ami_id" {
+  description = "Packer-built app tier AMI ID"
+  type        = string
+}
