@@ -118,6 +118,8 @@ def index():
         <div class="row"><span class="label">Database</span><span class="status healthy">{db_status}</span></div>
         <div class="row"><span class="label">Items in DB</span><span>{count}</span></div>
         <div class="row"><span class="label">Environment</span><span>{os.environ.get('ENVIRONMENT', 'unknown')}</span></div>
+        <div class="row"><span class="label">Instance</span><span style="font-family:monospace;font-size:12px;">{instance_id}</span></div>
+        <div class="row"><span class="label">Availability Zone</span><span>{az}</span></div>
     </div>
 
     <div class="card">
