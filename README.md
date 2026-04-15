@@ -2,6 +2,8 @@
 
 > **Production-style AWS infrastructure project implementing a highly available, auto-scaling 3-tier web application across multiple Availability Zones using Terraform, Ansible, GitHub Actions, and AWS managed services.**
 
+
+> Originally forked from [swanand18/ha-3tier-webapp](https://github.com/swanand18/ha-3tier-webapp). Significantly extended with HTTPS, WAFv2, VPC endpoints, readiness health checks, conditional IAM, SSM session logging, target tracking scaling, Nginx DNS re-resolution, and CI/CD via GitHub Actions.
 ---
 
 ## 👨‍💻 Author
