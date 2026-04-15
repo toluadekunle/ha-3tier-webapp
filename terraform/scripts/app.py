@@ -4,9 +4,26 @@ import pymysql
 from flask import Flask, jsonify, request
 from datetime import datetime
 
+import urllib.request
+
+def get_instance_meta():
+    """Fetch EC2 instance metadata (IMDSv2)"""
+    try:
+        token_req = urllib.request.Request("http://169.254.169.254/latest/api/token",
+            method="PUT", headers={"X-aws-ec2-metadata-token-ttl-seconds": "21600"})
+        token = urllib.request.urlopen(token_req, timeout=2).read().decode()
+        headers = {"X-aws-ec2-metadata-token": token}
+        iid = urllib.request.urlopen(urllib.request.Request(
+            "http://169.254.169.254/latest/meta-data/instance-id", headers=headers), timeout=2).read().decode()
+        az = urllib.request.urlopen(urllib.request.Request(
+            "http://169.254.169.254/latest/meta-data/placement/availability-zone", headers=headers), timeout=2).read().decode()
+        return iid, az
+    except:
+        return "unknown", "unknown"
+
 app = Flask(__name__)
-APP_VERSION = "2.0.0"
-DEPLOY_DATE = "15 Apr 2026 19:30"
+APP_VERSION = "2.1.0"
+DEPLOY_DATE = "15 Apr 2026 21:00"
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
@@ -52,6 +69,7 @@ def index():
     except Exception as e:
         db_status = str(e)
         count = 0
+    instance_id, az = get_instance_meta()
     items_html = ""
     try:
         conn2 = get_db_connection()
