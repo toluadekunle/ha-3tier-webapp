@@ -1,452 +1,225 @@
-# 🌐 Highly Available 3-Tier Web Application on AWS
+# Highly Available 3-Tier Web Application on AWS
 
-> **Production-style AWS infrastructure project implementing a highly available, auto-scaling 3-tier web application across multiple Availability Zones using Terraform, Ansible, GitHub Actions, and AWS managed services.**
+AWS infrastructure implementing a highly available, auto-scaling 3-tier web application across multiple Availability Zones. Built with Terraform, managed via HCP Terraform Remote execution, validated with Ansible, and deployed through GitHub Actions CI/CD.
 
+**Live:** https://app.cybserve.co.uk
 
-> Originally forked from [swanand18/ha-3tier-webapp](https://github.com/swanand18/ha-3tier-webapp). Significantly extended with HTTPS, WAFv2, VPC endpoints, readiness health checks, conditional IAM, SSM session logging, target tracking scaling, Nginx DNS re-resolution, and CI/CD via GitHub Actions.
----
-
-## 👨‍💻 Author
-
-**Swanand Awatade**
-Cloud / DevOps / Infrastructure Engineer
+> Originally forked from [swanand18/ha-3tier-webapp](https://github.com/swanand18/ha-3tier-webapp). Substantially rearchitected with 13 production hardening changes, 14 error fixes, HTTPS/TLS 1.3, WAFv2, VPC interface endpoints, readiness health checks, conditional IAM, SSM session logging, target tracking scaling, Nginx DNS re-resolution, and CI/CD via GitHub Actions.
 
 ---
 
-## 🧰 Tech Stack
+## Author
 
-* **Infrastructure as Code:** Terraform
-* **Cloud Platform:** AWS
-* **Networking:** VPC, Public/Private Subnets, NAT Gateway, Route Tables
-* **Load Balancing:** External ALB, Internal ALB
-* **Compute:** EC2 Auto Scaling Groups
-* **Database:** Amazon RDS MySQL (Multi-AZ)
-* **Security:** Security Groups, IAM, Secrets Manager, IMDSv2
-* **Observability:** CloudWatch, VPC Flow Logs
-* **Automation:** Ansible
-* **CI/CD:** GitHub Actions
-* **Web Tier:** Nginx
-* **App Tier:** Flask + Gunicorn
+**Tolu Adekunle**
 
 ---
 
-## 📐 Architecture
+## Architecture
 
-![HA 3-Tier Architecture](docs/images/architecture.png)
-
-### 🔍 High-Level Flow
-
-1. **Users** access the application via the internet
-2. Traffic enters through the **External Application Load Balancer**
-3. Requests are routed to the **Web Tier (Nginx)** running in an **Auto Scaling Group**
-4. The Web Tier forwards traffic to the **Internal ALB**
-5. Requests are passed to the **Application Tier (Flask + Gunicorn)** running in a separate **Auto Scaling Group**
-6. The App Tier securely connects to **Amazon RDS MySQL (Multi-AZ)** in private DB subnets
-7. Infrastructure is provisioned using **Terraform** and validated using **Ansible**
-8. Deployment and validation are automated using **GitHub Actions**
-
----
-
-## 🏗 Architecture Summary
-
-This project implements a **Highly Available 3-Tier Architecture** across **2 Availability Zones** with proper **network segmentation**, **security isolation**, **load balancing**, and **auto scaling**.
-
-### Core Design Principles
-
-* **High Availability**
-* **Fault Tolerance**
-* **Network Isolation**
-* **Least Privilege Security**
-* **Infrastructure as Code**
-* **Production-style Deployment Pattern**
-
----
-
-## 📁 Project Structure
-
-```bash
-ha-3tier-webapp/
-├── terraform/
-│   ├── main.tf
-│   ├── variables.tf
-│   ├── outputs.tf
-│   ├── terraform.tfvars.example
-│   └── modules/
-│       ├── vpc/
-│       ├── security/
-│       ├── alb/
-│       ├── ec2-asg/
-│       └── rds/
-├── scripts/
-│   ├── web_userdata.sh
-│   └── app_userdata.sh
-├── ansible/
-│   └── validate-deployment.yml
-├── .github/workflows/
-│   └── deploy-infra.yml
-├── docs/
-│   ├── architecture.md
-│   └── images/
-│       └── architecture.png
-└── README.md
+```
+Internet
+    |
+[WAFv2] -- CommonRuleSet, KnownBadInputs, IpReputationList, RateLimit 2000/5min
+    |
+[External ALB] -- HTTPS 443 (ACM, TLS 1.3) | HTTP 80 -> 301 redirect
+    |                 SG: ext-alb-sg (80/443 from 0.0.0.0/0)
+    |
+[Web Tier] -- 2x t3.micro, Nginx reverse proxy, private app subnets
+    |            SG: web-sg (80 from ext-alb-sg only)
+    |            No SSH | No Secrets Manager access | SSM only
+    |            Nginx resolver 169.254.169.253 valid=30s
+    |
+[Internal ALB] -- Private app subnets, own SG
+    |                SG: int-alb-sg (80 from web-sg only)
+    |
+[App Tier] -- 2x t3.small, Flask/Gunicorn port 5000, private app subnets
+    |           SG: app-sg (5000 from int-alb-sg only)
+    |           Health: /api/ready -> 503 when DB unreachable
+    |           Health: /api/live -> 200 if process alive
+    |
+[RDS MySQL 8.0] -- Multi-AZ, encrypted, gp3, private DB subnets
+                    SG: rds-sg (3306 from app-sg only)
+                    No outbound route | No public access
 ```
 
 ---
 
-## 🚀 Features
+## Infrastructure Summary
 
-* ✅ Highly Available 3-Tier Architecture
-* ✅ Public + Private subnet segregation
-* ✅ External and Internal Application Load Balancers
-* ✅ Web Tier and App Tier in separate Auto Scaling Groups
-* ✅ RDS MySQL Multi-AZ deployment
-* ✅ Secrets Manager for secure DB password handling
-* ✅ CloudWatch logs, alarms, and VPC Flow Logs
-* ✅ Terraform-based infrastructure provisioning
-* ✅ Ansible-based deployment validation
-* ✅ GitHub Actions for infra CI/CD
-
----
-
-## 🌍 Architecture Components
-
-### 1️⃣ Networking Layer
-
-* Custom **VPC**
-* **2 Public Subnets**
-* **2 Private App Subnets**
-* **2 Private DB Subnets**
-* **Internet Gateway**
-* **NAT Gateways**
-* **Route Tables**
-* **VPC Flow Logs**
-
-### 2️⃣ Web Tier
-
-* Nginx reverse proxy
-* Deployed in private compute subnets
-* Connected behind an **External ALB**
-* Auto Scaling enabled across AZs
-
-### 3️⃣ Application Tier
-
-* Flask application served using Gunicorn
-* Connected behind an **Internal ALB**
-* Runs in private subnets only
-* Auto Scaling enabled
-
-### 4️⃣ Database Tier
-
-* Amazon RDS MySQL
-* Multi-AZ enabled
-* Deployed in private DB subnets
-* No public access
+| Component | Configuration |
+|-----------|--------------|
+| Region | eu-west-2 (London) |
+| Domain | app.cybserve.co.uk (ACM certificate, DNS validated via GoDaddy) |
+| TLS | TLS 1.3 (ELBSecurityPolicy-TLS13-1-2-2021-06), HTTP to HTTPS redirect |
+| WAF | WAFv2: CommonRuleSet, KnownBadInputs, IpReputationList, RateLimit |
+| VPC | 10.0.0.0/16, 6 subnets across 2 AZs |
+| Public subnets | 10.0.1.0/24 (2a), 10.0.2.0/24 (2b) -- External ALB and NAT Gateways only |
+| Private app subnets | 10.0.11.0/24 (2a), 10.0.12.0/24 (2b) -- Web ASG, App ASG, Internal ALB, VPC endpoints |
+| Private DB subnets | 10.0.21.0/24 (2a), 10.0.22.0/24 (2b) -- RDS only, no outbound route |
+| Compute | Web: 2x t3.micro (Nginx), App: 2x t3.small (Flask/Gunicorn) |
+| Database | RDS MySQL 8.0, db.t3.micro, Multi-AZ, encrypted, gp3, 7-day backup |
+| Scaling | TargetTrackingScaling at 60% CPU, AWS-managed alarms |
+| State | HCP Terraform Remote execution |
+| CI/CD | GitHub Actions: plan on PR, apply on merge to main |
+| Total resources | 75 Terraform-managed |
 
 ---
 
-## ⚙️ Prerequisites
+## Security
 
-Install the following tools:
+| Control | Implementation |
+|---------|---------------|
+| TLS | ACM certificate, TLS 1.3 at ALB, HTTP redirected to HTTPS |
+| WAF | 4 AWS managed rule groups on external ALB |
+| SSH | Removed from all security groups. SSM Session Manager only |
+| SSM logging | Session commands logged to CloudWatch Logs, 7-day retention |
+| Secrets | Scoped IAM to exact secret ARN. Web tier has no secrets policy (conditional boolean) |
+| Security groups | 6 SGs with SG-to-SG references. Each tier only accepts traffic from the tier above |
+| IAM | Per-tier instance profiles. Conditional secrets access. Zero Resource:* policies |
+| IMDSv2 | Required on all instances (http_tokens = required) |
+| VPC endpoints | 5 interface endpoints (SSM, SSMMessages, EC2Messages, Secrets Manager, CloudWatch Logs) |
+| Endpoint SG | vpce-sg: HTTPS 443 from VPC CIDR only |
+| VPC Flow Logs | All traffic logged to CloudWatch. IAM scoped to exact log group ARN |
+| RDS | Private subnets only, no public access, encrypted storage, no outbound route |
+| EBS | Encrypted gp3 on all instances |
 
-* Terraform `>= 1.5`
-* AWS CLI
-* Ansible
-* Git
+---
 
-### Verify Installation
+## VPC Interface Endpoints
+
+Management plane traffic stays inside the VPC via PrivateLink:
+
+| Endpoint | Service | Purpose |
+|----------|---------|---------|
+| vpce-ssm | com.amazonaws.eu-west-2.ssm | Session Manager control |
+| vpce-ssmmessages | com.amazonaws.eu-west-2.ssmmessages | Session Manager data channel |
+| vpce-ec2messages | com.amazonaws.eu-west-2.ec2messages | SSM agent communication |
+| vpce-secrets | com.amazonaws.eu-west-2.secretsmanager | Database credential retrieval |
+| vpce-logs | com.amazonaws.eu-west-2.logs | CloudWatch log delivery |
+
+All endpoints have private DNS enabled and share a dedicated security group allowing HTTPS from the VPC CIDR.
+
+---
+
+## Health Checks
+
+| Endpoint | Behaviour | Used by |
+|----------|-----------|---------|
+| /health | Returns 200 from Nginx directly (web tier alive) | External ALB web target group |
+| /api/ready | Returns 200 when DB connected, 503 when DB unreachable | Internal ALB app target group |
+| /api/live | Returns 200 if Flask process is alive | Liveness check |
+| /api/health | Returns full status with DB connectivity, environment, timestamp | Diagnostic |
+
+---
+
+## CI/CD
+
+GitHub Actions workflows triggered by repository events:
+
+| Workflow | Trigger | Steps |
+|----------|---------|-------|
+| Terraform Plan | Pull request to main (terraform/** paths) | Checkout, Setup Terraform, fmt check, init, validate, plan, PR comment |
+| Terraform Apply | Push to main (terraform/** paths) | Checkout, Setup Terraform, init, apply |
+
+Authentication via HCP Terraform API token stored as GitHub Actions secret. AWS credentials remain in the HCP Terraform workspace, never in GitHub.
+
+---
+
+## Terraform Modules
+
+| Module | Resources |
+|--------|-----------|
+| vpc | VPC, 6 subnets, IGW, 2 NAT Gateways, route tables, flow logs |
+| security | 6 SGs: ext-alb, int-alb, web, app, rds, vpce |
+| alb | External ALB (HTTPS + redirect), Internal ALB, target groups, S3 logs |
+| ec2-asg | Launch template, ASG, TargetTracking scaling, IAM (reused for web and app) |
+| rds | RDS MySQL Multi-AZ, parameter group, subnet group |
+| Root | WAF, ACM, Secrets Manager, SSM logging, VPC endpoints |
+
+---
+
+## Deployment
+
+### Prerequisites
+
+- Terraform >= 1.5
+- AWS CLI configured with profile
+- HCP Terraform account with workspace configured
+- GoDaddy DNS (or equivalent) for domain validation
+
+### Deploy
 
 ```bash
-terraform version
-aws --version
-ansible --version
-git --version
-```
-
----
-
-## ☁️ AWS Configuration
-
-Configure your AWS credentials:
-
-```bash
-aws configure
-```
-
-Enter:
-
-* AWS Access Key ID
-* AWS Secret Access Key
-* Region: `ap-south-1`
-* Output format: `json`
-
----
-
-## 🚀 Deployment Guide
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/swanand18/ha-3tier-webapp.git
-cd ha-3tier-webapp
-```
-
----
-
-### 2. Configure Terraform Variables
-
-```bash
+export AWS_PROFILE=ha3
 cd terraform
-cp terraform.tfvars.example terraform.tfvars
-```
-
-Update values in:
-
-```bash
-terraform.tfvars
-```
-
-For example:
-
-* AWS region
-* Key pair name
-* instance sizes
-* DB settings
-* domain / certificate values (if used)
-
----
-
-### 3. Initialize Terraform
-
-```bash
 terraform init
-```
-
----
-
-### 4. Preview Changes
-
-```bash
-terraform plan
-```
-
----
-
-### 5. Deploy Infrastructure
-
-```bash
 terraform apply
 ```
 
-> ⏱ Expected deployment time: **10–20 minutes**
-> (RDS Multi-AZ and NAT Gateways usually take the longest)
-
----
-
-## 🔍 Validate Deployment
-
-### Get ALB URL
+### Test
 
 ```bash
-terraform output app_url
+curl -I http://app.cybserve.co.uk
+curl -sk https://app.cybserve.co.uk/api/health
+curl -sk https://app.cybserve.co.uk/api/ready
+curl -sk https://app.cybserve.co.uk/api/live
 ```
 
-or
-
-```bash
-terraform output -raw alb_dns_name
-```
-
----
-
-### Run Validation Playbook
-
-```bash
-ansible-playbook -i localhost, ansible/validate-deployment.yml \
-  -e "alb_dns=$(terraform output -raw alb_dns_name)"
-```
-
----
-
-## 🌐 Test the Application
-
-```bash
-ALB="http://$(terraform output -raw alb_dns_name)"
-
-curl $ALB/health
-curl $ALB/api/health
-curl $ALB/api/items
-```
-
-### Create a Sample Item
-
-```bash
-curl -X POST $ALB/api/items \
-  -H "Content-Type: application/json" \
-  -d '{"name":"sample-item","description":"hello from HA webapp"}'
-```
-
----
-
-## 🔧 Terraform Modules
-
-### `modules/vpc`
-
-Responsible for:
-
-* VPC creation
-* Public / Private subnet design
-* Internet Gateway
-* NAT Gateways
-* Route Tables
-* Flow Logs
-
----
-
-### `modules/security`
-
-Responsible for:
-
-* ALB Security Group
-* Web Tier Security Group
-* App Tier Security Group
-* RDS Security Group
-
-Implements **least privilege** access.
-
----
-
-### `modules/alb`
-
-Responsible for:
-
-* External ALB
-* Internal ALB
-* Target Groups
-* Listener Rules
-* HTTP/HTTPS handling
-
----
-
-### `modules/ec2-asg`
-
-Responsible for:
-
-* Launch Templates
-* Auto Scaling Groups
-* Scaling Policies
-* CloudWatch Alarms
-* Rolling Instance Refresh
-
----
-
-### `modules/rds`
-
-Responsible for:
-
-* RDS MySQL deployment
-* Multi-AZ setup
-* DB subnet group
-* Parameter group
-* Backup retention
-* CloudWatch integration
-
----
-
-## 🔐 Security Highlights
-
-| Control           | Implementation             |
-| ----------------- | -------------------------- |
-| DB Credentials    | AWS Secrets Manager        |
-| EC2 Metadata      | IMDSv2 enforced            |
-| Storage           | Encrypted EBS volumes      |
-| Database Exposure | Private only               |
-| Access Control    | Least privilege IAM        |
-| SSH               | Key-based authentication   |
-| Logs              | VPC Flow Logs + CloudWatch |
-| TLS               | Ready for HTTPS via ALB    |
-
----
-
-## 📊 Auto Scaling Configuration
-
-| Tier     | Min | Max | Scale Up  | Scale Down |
-| -------- | --- | --- | --------- | ---------- |
-| Web Tier | 2   | 6   | CPU > 70% | CPU < 20%  |
-| App Tier | 2   | 6   | CPU > 70% | CPU < 20%  |
-
----
-
-## 📈 Monitoring & Observability
-
-This project includes operational visibility using:
-
-* **CloudWatch Logs**
-* **CloudWatch Alarms**
-* **VPC Flow Logs**
-* **ALB health checks**
-* **Auto Scaling health policies**
-
-This improves:
-
-* reliability
-* troubleshooting
-* deployment confidence
-* operational readiness
-
----
-
-## 💰 Estimated AWS Cost (ap-south-1)
-
-| Resource            | Approx Monthly Cost |
-| ------------------- | ------------------- |
-| EC2 Web Tier        | ~$15                |
-| EC2 App Tier        | ~$30                |
-| RDS Multi-AZ        | ~$30                |
-| NAT Gateway x2      | ~$65                |
-| ALB x2              | ~$32                |
-| **Estimated Total** | **~$172/month**     |
-
-> 💡 For testing/dev, you can reduce cost using smaller instances and fewer HA components.
-
----
-
-## 🗑️ Destroy Infrastructure
-
-To avoid AWS charges:
+### Destroy
 
 ```bash
 cd terraform
-terraform destroy
+terraform destroy -auto-approve
 ```
 
 ---
 
-## 🎯 Key Outcomes
+## Build History
 
-* ✅ Built a **production-style AWS 3-tier architecture**
-* ✅ Implemented **multi-AZ high availability**
-* ✅ Designed **secure private subnet architecture**
-* ✅ Used **Terraform for repeatable IaC deployment**
-* ✅ Automated validation with **Ansible**
-* ✅ Enabled **scalability and observability**
-* ✅ Used **managed AWS services** following good cloud design principles
+14 errors were diagnosed and fixed across OS, application, network, security, and database layers:
 
----
+**Pre-deploy errors:** Wrong shell environment, root credentials in config, script path mismatch in remote execution, Ansible gather_facts conflict, HCL semicolon syntax errors, template variable case mismatch, remote execution path failure, workspace variable miscategorisation.
 
-## 🔮 Future Improvements
+**Post-deploy errors:** curl-minimal package conflict on AL2023, mysql package renamed to mariadb105 on AL2023, app security group blocked ALB health check packets, RDS endpoint included port in hostname string, Ansible smoke test targeted non-existent root route.
 
-* Add **WAF** for edge protection
-* Add **CloudFront** for CDN and caching
-* Add **ACM + HTTPS enforcement**
-* Add **EKS / ECS migration path**
-* Add **RDS Proxy** for better DB connection handling
-* Add **Prometheus + Grafana** monitoring
-* Add **Blue/Green deployment** support
+**Post-hardening error:** 504 Nginx DNS caching after internal ALB subnet move. Nginx cached stale IPs at startup, resolved with resolver directive and variable proxy_pass.
 
 ---
 
-## ⭐ Support
+## Production Hardening (13 changes)
 
-If you found this project useful, consider giving it a **star** on GitHub.
+1. Internal ALB moved from public to private subnets
+2. SSH removed from all security groups, SSM Session Manager only
+3. Secrets Manager IAM policy scoped to exact secret ARN
+4. Separate security group for internal ALB (int-alb-sg)
+5. VPC flow logs IAM policy scoped to exact log group ARN
+6. HTTPS with ACM certificate, TLS 1.3 policy, HTTP-to-HTTPS redirect
+7. WAFv2 with 4 managed rule groups attached to external ALB
+8. Readiness/liveness health check split (/api/ready returns 503 when DB unreachable)
+9. Web tier Secrets Manager access disabled via conditional boolean
+10. App security group tightened to Internal ALB SG only (Web SG removed)
+11. TargetTrackingScaling at 60% CPU replacing SimpleScaling with manual alarms
+12. Nginx resolver directive (169.254.169.253 valid=30s) with variable proxy_pass
+13. SSM session logging to CloudWatch Logs with 7-day retention
+
+Plus: 5 VPC interface endpoints and CI/CD via GitHub Actions.
 
 ---
+
+## Estimated Cost (eu-west-2)
+
+| Resource | Approximate monthly cost |
+|----------|------------------------|
+| EC2 Web Tier (2x t3.micro) | ~$17 |
+| EC2 App Tier (2x t3.small) | ~$34 |
+| RDS Multi-AZ (db.t3.micro) | ~$29 |
+| NAT Gateway x2 | ~$65 |
+| ALB x2 | ~$32 |
+| VPC Endpoints x5 | ~$52 |
+| Total | ~$229/month |
+
+---
+
+## License
+
+No licence file in the original repository. This fork is maintained independently. Attribution to the original repository is preserved above.
