@@ -4,7 +4,7 @@
 #  Runs on first boot via Launch Template user_data
 #  Installs Nginx as reverse proxy → App Tier (internal ALB)
 # ============================================================
-set -euo pipefail
+set -eo pipefail
 
 APP_TIER_ENDPOINT="${app_tier_endpoint}"
 ENVIRONMENT="${environment}"
