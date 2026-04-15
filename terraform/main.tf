@@ -317,3 +317,40 @@ resource "aws_acm_certificate" "main" {
     Name = "${var.project_name}-${var.environment}-cert"
   }
 }
+
+# ── SSM Session Manager Logging ──────────────────────────
+resource "aws_ssm_document" "session_logging" {
+  name            = "${var.project_name}-${var.environment}-session-prefs"
+  document_type   = "Session"
+  document_format = "JSON"
+
+  content = jsonencode({
+    schemaVersion = "1.0"
+    description   = "Session Manager logging preferences"
+    sessionType   = "Standard_Stream"
+    inputs = {
+      cloudWatchLogGroupName      = "/aws/ssm/${var.project_name}-${var.environment}-sessions"
+      cloudWatchEncryptionEnabled = false
+      s3BucketName                = ""
+      s3KeyPrefix                 = ""
+      s3EncryptionEnabled         = false
+      runAsEnabled                = false
+      shellProfile = {
+        linux = ""
+      }
+    }
+  })
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-session-prefs"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "ssm_sessions" {
+  name              = "/aws/ssm/${var.project_name}-${var.environment}-sessions"
+  retention_in_days = 7
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-ssm-logs"
+  }
+}

@@ -50,14 +50,11 @@ http {
 }
 NGINX
 
-cat > /etc/nginx/conf.d/app.conf <<NGINXAPP
-upstream app_backend {
-    server ${APP_TIER_ENDPOINT}:80;
-    keepalive 32;
-}
 
 server {
     listen 80;
+    resolver 169.254.169.253 valid=30s ipv6=off;
+    set $app_backend "http://${APP_TIER_ENDPOINT}:80";
     server_name _;
 
     # Health check endpoint (returns 200 directly from Nginx)
@@ -76,7 +73,7 @@ server {
 
     # Proxy all other traffic to App Tier
     location / {
-        proxy_pass         http://app_backend;
+        proxy_pass         $app_backend;
         proxy_set_header   Host              \$host;
         proxy_set_header   X-Real-IP         \$remote_addr;
         proxy_set_header   X-Forwarded-For   \$proxy_add_x_forwarded_for;
