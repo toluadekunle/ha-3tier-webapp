@@ -30,4 +30,4 @@ route53_zone_id = ""
 
 # Packer AMI IDs — update after each packer build
 web_ami_id = "ami-0fa4a29703d31133d"
-app_ami_id = "ami-0bbb060b8c2846711"
+app_ami_id = "ami-0035d8fae414cda01"
