@@ -74,4 +74,9 @@ build {
       "sudo chown appuser:appuser /opt/app/app.py"
     ]
   }
+
+  post-processor "manifest" {
+    output     = "packer/manifest.json"
+    strip_path = true
+  }
 }
