@@ -36,6 +36,71 @@ def get_db_connection():
     )
 
 # ── Routes ─────────────────────────────────────────────────
+
+@app.route("/")
+def index():
+    db_status = "unknown"
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) as count FROM items")
+            count = cur.fetchone()["count"]
+        conn.close()
+        db_status = "connected"
+    except Exception as e:
+        db_status = str(e)
+        count = 0
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>HA 3-Tier Web App</title>
+    <style>
+        body {{ font-family: -apple-system, sans-serif; max-width: 700px; margin: 60px auto; padding: 0 20px; background: #0f172a; color: #e2e8f0; }}
+        h1 {{ color: #38bdf8; margin-bottom: 4px; }}
+        .subtitle {{ color: #94a3b8; margin-bottom: 40px; }}
+        .card {{ background: #1e293b; border-radius: 8px; padding: 20px; margin: 16px 0; }}
+        .card h3 {{ margin-top: 0; color: #38bdf8; }}
+        .status {{ display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; }}
+        .healthy {{ background: #064e3b; color: #6ee7b7; }}
+        .row {{ display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #334155; }}
+        .label {{ color: #94a3b8; }}
+        a {{ color: #38bdf8; }}
+        .footer {{ margin-top: 40px; color: #475569; font-size: 13px; text-align: center; }}
+    </style>
+</head>
+<body>
+    <h1>HA 3-Tier Web App</h1>
+    <p class="subtitle">Built by Tolu Adekunle</p>
+
+    <div class="card">
+        <h3>Infrastructure</h3>
+        <div class="row"><span class="label">Architecture</span><span>3-Tier HA (Web / App / DB)</span></div>
+        <div class="row"><span class="label">Region</span><span>eu-west-2 (London)</span></div>
+        <div class="row"><span class="label">TLS</span><span>ACM + TLS 1.3</span></div>
+        <div class="row"><span class="label">WAF</span><span>4 managed rule groups</span></div>
+        <div class="row"><span class="label">Deployment</span><span>Packer AMI + Terraform + GitHub Actions</span></div>
+    </div>
+
+    <div class="card">
+        <h3>Live Status</h3>
+        <div class="row"><span class="label">Database</span><span class="status healthy">{db_status}</span></div>
+        <div class="row"><span class="label">Items in DB</span><span>{count}</span></div>
+        <div class="row"><span class="label">Environment</span><span>{os.environ.get('ENVIRONMENT', 'unknown')}</span></div>
+    </div>
+
+    <div class="card">
+        <h3>API Endpoints</h3>
+        <div class="row"><span class="label">Health</span><a href="/api/health">/api/health</a></div>
+        <div class="row"><span class="label">Readiness</span><a href="/api/ready">/api/ready</a></div>
+        <div class="row"><span class="label">Liveness</span><a href="/api/live">/api/live</a></div>
+        <div class="row"><span class="label">Items</span><a href="/api/items">/api/items</a></div>
+    </div>
+
+    <p class="footer">Immutable AMI deployment &middot; Packer &middot; Terraform &middot; HCP Terraform Remote Execution</p>
+</body>
+</html>""", 200, {"Content-Type": "text/html"}
+
 @app.route("/api/health")
 def health():
     db_status = "unknown"
