@@ -49,9 +49,9 @@ resource "aws_db_instance" "main" {
   parameter_group_name       = aws_db_parameter_group.main.name
   multi_az                   = var.multi_az
   publicly_accessible        = false
-  skip_final_snapshot        = true
-  final_snapshot_identifier  = "${var.project_name}-${var.environment}-final-snapshot"
-  deletion_protection        = false # set true in production
+  skip_final_snapshot        = var.skip_final_snapshot
+  final_snapshot_identifier  = "${var.project_name}-${var.environment}-final-${formatdate("YYYYMMDDhhmmss", timestamp())}"
+  deletion_protection        = var.deletion_protection
   backup_retention_period    = 7
   backup_window              = "03:00-04:00"
   maintenance_window         = "Mon:04:00-Mon:05:00"

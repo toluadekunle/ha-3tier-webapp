@@ -27,6 +27,7 @@ resource "aws_iam_role_policy_attachment" "cloudwatch" {
 }
 
 resource "aws_iam_role_policy" "secrets" {
+  count = var.enable_secrets_access ? 1 : 0
   name = "read-secrets"
   role = aws_iam_role.ec2.id
   policy = jsonencode({

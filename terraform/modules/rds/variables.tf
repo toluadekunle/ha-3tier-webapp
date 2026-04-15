@@ -39,3 +39,15 @@ variable "multi_az" {
   type    = bool
   default = true
 }
+
+variable "skip_final_snapshot" {
+  description = "Skip final snapshot on destroy (false in production)"
+  type        = bool
+  default     = false
+}
+
+variable "deletion_protection" {
+  description = "Enable deletion protection (true in production)"
+  type        = bool
+  default     = true
+}

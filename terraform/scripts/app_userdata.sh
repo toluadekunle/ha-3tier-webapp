@@ -100,6 +100,22 @@ def health():
         "timestamp":   datetime.utcnow().isoformat()
     }), 200
 
+@app.route("/api/live")
+def live():
+    return jsonify({"status": "alive", "tier": "app"}), 200
+
+@app.route("/api/ready")
+def ready():
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")
+        conn.close()
+        return jsonify({"status": "ready", "database": "connected"}), 200
+    except Exception as e:
+        logger.error("Readiness check failed: %s", e)
+        return jsonify({"status": "not_ready", "database": str(e)}), 503
+
 @app.route("/api/info")
 def info():
     return jsonify({

@@ -87,7 +87,7 @@ module "alb" {
   private_subnet_ids = module.vpc.private_app_subnet_ids
   alb_sg_id         = module.security.alb_sg_id
   int_alb_sg_id     = module.security.int_alb_sg_id
-  certificate_arn   = var.certificate_arn
+  certificate_arn   = try(aws_acm_certificate.main.arn, var.certificate_arn)
 }
 
 # ── Module: Web Tier ASG ──────────────────────────────────
@@ -103,6 +103,7 @@ module "web_tier" {
   security_group_ids = [module.security.web_sg_id]
   target_group_arn   = module.alb.web_target_group_arn
   secret_arn         = aws_secretsmanager_secret.db_password.arn
+  enable_secrets_access = false
   min_size           = var.web_min_size
   max_size           = var.web_max_size
   desired_capacity   = var.web_desired_capacity
@@ -159,6 +160,8 @@ module "rds" {
   db_password        = random_password.db_password.result
   instance_class     = var.db_instance_class
   engine_version     = var.db_engine_version
+  skip_final_snapshot = true
+  deletion_protection = false
   multi_az           = var.db_multi_az
 }
 
@@ -196,5 +199,121 @@ resource "aws_route53_record" "app" {
     name                   = module.alb.alb_dns_name
     zone_id                = module.alb.alb_zone_id
     evaluate_target_health = true
+  }
+}
+
+# ── WAFv2 Web ACL ────────────────────────────────────────
+resource "aws_wafv2_web_acl" "main" {
+  name        = "${var.project_name}-${var.environment}-waf"
+  description = "WAF for external ALB"
+  scope       = "REGIONAL"
+
+  default_action {
+    allow {}
+  }
+
+  rule {
+    name     = "AWSManagedRulesCommonRuleSet"
+    priority = 1
+    override_action {
+      none {}
+    }
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesCommonRuleSet"
+        vendor_name = "AWS"
+      }
+    }
+    visibility_config {
+      sampled_requests_enabled   = true
+      cloudwatch_metrics_enabled = true
+      metric_name                = "${var.project_name}-common-rules"
+    }
+  }
+
+  rule {
+    name     = "AWSManagedRulesKnownBadInputsRuleSet"
+    priority = 2
+    override_action {
+      none {}
+    }
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesKnownBadInputsRuleSet"
+        vendor_name = "AWS"
+      }
+    }
+    visibility_config {
+      sampled_requests_enabled   = true
+      cloudwatch_metrics_enabled = true
+      metric_name                = "${var.project_name}-bad-inputs"
+    }
+  }
+
+  rule {
+    name     = "AWSManagedRulesAmazonIpReputationList"
+    priority = 3
+    override_action {
+      none {}
+    }
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesAmazonIpReputationList"
+        vendor_name = "AWS"
+      }
+    }
+    visibility_config {
+      sampled_requests_enabled   = true
+      cloudwatch_metrics_enabled = true
+      metric_name                = "${var.project_name}-ip-reputation"
+    }
+  }
+
+  rule {
+    name     = "RateLimit"
+    priority = 4
+    action {
+      block {}
+    }
+    statement {
+      rate_based_statement {
+        limit              = 2000
+        aggregate_key_type = "IP"
+      }
+    }
+    visibility_config {
+      sampled_requests_enabled   = true
+      cloudwatch_metrics_enabled = true
+      metric_name                = "${var.project_name}-rate-limit"
+    }
+  }
+
+  visibility_config {
+    sampled_requests_enabled   = true
+    cloudwatch_metrics_enabled = true
+    metric_name                = "${var.project_name}-waf"
+  }
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-waf"
+  }
+}
+
+resource "aws_wafv2_web_acl_association" "main" {
+  resource_arn = module.alb.external_alb_arn
+  web_acl_arn  = aws_wafv2_web_acl.main.arn
+}
+
+# ── ACM Certificate for HTTPS ────────────────────────────
+resource "aws_acm_certificate" "main" {
+  domain_name       = "app.cybserve.co.uk"
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-cert"
   }
 }

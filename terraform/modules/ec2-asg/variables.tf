@@ -18,3 +18,9 @@ variable "secret_arn" {
   type        = string
   default     = "*"
 }
+
+variable "enable_secrets_access" {
+  description = "Whether to create Secrets Manager read policy"
+  type        = bool
+  default     = true
+}
