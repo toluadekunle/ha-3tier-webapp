@@ -5,6 +5,8 @@ from flask import Flask, jsonify, request
 from datetime import datetime
 
 app = Flask(__name__)
+APP_VERSION = "2.0.0"
+DEPLOY_DATE = "15 Apr 2026 19:30"
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
@@ -71,7 +73,7 @@ def index():
 </head>
 <body>
     <h1>HA 3-Tier Web App</h1>
-    <p class="subtitle">Built by Tolu Adekunle</p>
+    <p class="subtitle">Built by Tolu Adekunle &middot; v{APP_VERSION} &middot; Deployed {DEPLOY_DATE}</p>
 
     <div class="card">
         <h3>Infrastructure</h3>
