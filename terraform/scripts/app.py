@@ -50,6 +50,17 @@ def index():
     except Exception as e:
         db_status = str(e)
         count = 0
+    items_html = ""
+    try:
+        conn2 = get_db_connection()
+        with conn2.cursor() as cur:
+            cur.execute("SELECT name, description, created_at FROM items ORDER BY created_at DESC LIMIT 5")
+            recent = cur.fetchall()
+        conn2.close()
+        for item in recent:
+            items_html += f'<div class="row"><span class="label">{item["name"]}</span><span>{item["created_at"].strftime("%d %b %H:%M") if item["created_at"] else ""}</span></div>'
+    except:
+        items_html = '<div class="row"><span class="label">Could not load items</span></div>'
 
     return f"""<!DOCTYPE html>
 <html>
@@ -90,12 +101,46 @@ def index():
     </div>
 
     <div class="card">
+        <h3>Live Database</h3>
+        <div class="row"><span class="label">Total items</span><span>{count}</span></div>
+        <div id="items-list">{items_html}</div>
+        <div style="margin-top:16px">
+            <input id="item-name" placeholder="Item name" style="background:#0f172a;border:1px solid #334155;color:#e2e8f0;padding:8px 12px;border-radius:6px;width:60%;font-size:14px;">
+            <button onclick="addItem()" style="background:#38bdf8;color:#0f172a;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:8px;">Add Item</button>
+        </div>
+        <div id="add-result" style="margin-top:8px;font-size:13px;color:#94a3b8;"></div>
+    </div>
+
+    <div class="card">
         <h3>API Endpoints</h3>
         <div class="row"><span class="label">Health</span><a href="/api/health">/api/health</a></div>
         <div class="row"><span class="label">Readiness</span><a href="/api/ready">/api/ready</a></div>
         <div class="row"><span class="label">Liveness</span><a href="/api/live">/api/live</a></div>
+        <div class="row"><span class="label">Stats</span><a href="/api/stats">/api/stats</a></div>
         <div class="row"><span class="label">Items</span><a href="/api/items">/api/items</a></div>
     </div>
+
+    <script>
+    function addItem() {{
+        const name = document.getElementById('item-name').value;
+        if (!name) return;
+        fetch('/api/items', {{
+            method: 'POST',
+            headers: {{'Content-Type': 'application/json'}},
+            body: JSON.stringify({{name: name, description: 'Added via dashboard'}})
+        }})
+        .then(r => r.json())
+        .then(d => {{
+            document.getElementById('add-result').textContent = d.status === 'created' ? 'Item added: ' + d.name : 'Error: ' + JSON.stringify(d);
+            document.getElementById('item-name').value = '';
+            setTimeout(() => location.reload(), 1000);
+        }})
+        .catch(e => document.getElementById('add-result').textContent = 'Error: ' + e);
+    }}
+    document.getElementById('item-name').addEventListener('keypress', function(e) {{
+        if (e.key === 'Enter') addItem();
+    }});
+    </script>
 
     <p class="footer">Immutable AMI deployment &middot; Packer &middot; Terraform &middot; HCP Terraform Remote Execution</p>
 </body>
