@@ -41,39 +41,8 @@ data "aws_availability_zones" "available" {
 }
 
 # ── AMI Lookups (Packer-built golden images) ──────────────
-data "aws_ami" "web" {
-  most_recent = true
-  owners      = ["self"]
-  filter {
-    name   = "tag:Tier"
-    values = ["web"]
-  }
-  filter {
-    name   = "tag:ManagedBy"
-    values = ["Packer"]
-  }
-  filter {
-    name   = "state"
-    values = ["available"]
-  }
-}
-
-data "aws_ami" "app" {
-  most_recent = true
-  owners      = ["self"]
-  filter {
-    name   = "tag:Tier"
-    values = ["app"]
-  }
-  filter {
-    name   = "tag:ManagedBy"
-    values = ["Packer"]
-  }
-  filter {
-    name   = "state"
-    values = ["available"]
-  }
-}
+# ── AMI IDs (set explicitly in tfvars after Packer build) ──
+# No data source lookup. Every AMI change is a git commit.
 
 # ── Module: VPC ───────────────────────────────────────────
 module "vpc" {
@@ -119,7 +88,7 @@ module "web_tier" {
   project_name       = var.project_name
   environment        = var.environment
   tier               = "web"
-  ami_id             = data.aws_ami.web.id
+  ami_id             = var.web_ami_id
   instance_type      = var.web_instance_type
   subnet_ids         = module.vpc.private_app_subnet_ids
   security_group_ids = [module.security.web_sg_id]
@@ -146,7 +115,7 @@ module "app_tier" {
   project_name       = var.project_name
   environment        = var.environment
   tier               = "app"
-  ami_id             = data.aws_ami.app.id
+  ami_id             = var.app_ami_id
   instance_type      = var.app_instance_type
   subnet_ids         = module.vpc.private_app_subnet_ids
   security_group_ids = [module.security.app_sg_id]
