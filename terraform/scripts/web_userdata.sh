@@ -49,6 +49,7 @@ http {
 NGINX
 
 
+cat > /etc/nginx/conf.d/app.conf <<NGINXAPP
 server {
     listen 80;
     resolver 169.254.169.253 valid=30s ipv6=off;
