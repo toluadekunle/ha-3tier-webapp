@@ -97,7 +97,7 @@ HTML
 echo "[4/5] Starting Nginx..."
 nginx -t
 systemctl enable nginx
-systemctl start nginx
+systemctl restart nginx
 
 # ── 5. CloudWatch agent config ────────────────────────────
 echo "[5/5] Configuring CloudWatch agent..."
