@@ -22,8 +22,8 @@ def get_instance_meta():
         return "unknown", "unknown"
 
 app = Flask(__name__)
-APP_VERSION = "2.3.0"
-DEPLOY_DATE = "15 Apr 2026 22:00"
+APP_VERSION = "2.3.1"
+DEPLOY_DATE = "16 Apr 2026 00:30"
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
@@ -85,7 +85,7 @@ def index():
     return f"""<!DOCTYPE html>
 <html>
 <head>
-    <title>HA 3-Tier Web App</title>
+    <title>Cybserve Infrastructure Platform</title>
     <style>
         body {{ font-family: -apple-system, sans-serif; max-width: 700px; margin: 60px auto; padding: 0 20px; background: #0f172a; color: #e2e8f0; }}
         h1 {{ color: #38bdf8; margin-bottom: 4px; }}
@@ -101,8 +101,8 @@ def index():
     </style>
 </head>
 <body>
-    <h1>HA 3-Tier Web App</h1>
-    <p class="subtitle">Built by Tolu Adekunle &middot; v{APP_VERSION} &middot; Deployed {DEPLOY_DATE}</p>
+    <h1>Cybserve Infrastructure Platform</h1>
+    <p class="subtitle">Tolu Adekunle &middot; v{APP_VERSION} &middot; Deployed {DEPLOY_DATE}</p>
 
     <div class="card">
         <h3>Infrastructure</h3>
